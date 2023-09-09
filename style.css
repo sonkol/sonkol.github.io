@@ -3,6 +3,7 @@
 }
 
 body {
+  filter: grayscale(1); /* Odstraní barevný šum na hranách textu způsobený hintingem */
   background-color: black;
   color: white;
   font-family: 'Lato', sans-serif;
