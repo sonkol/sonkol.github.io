@@ -64,8 +64,13 @@ main {
   overflow: hidden;
 }
 
+.platform {
+  width: 2em;
+  text-align: center;
+}
+
 .arrival {
-  width: 15%;
+  width: 3ch;
   text-align: right;
 }
 

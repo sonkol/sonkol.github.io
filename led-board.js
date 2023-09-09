@@ -1,7 +1,13 @@
 "use strict";
+// Constant definitions
 const SETTINGS = {
   "prefix" : "https://api.golemio.cz/v2/pid/departureboards/?", // Base URL
   "httpTimeout" : 20
+}
+
+// Settings that can be changed
+let settings = {
+  "showPlatformNumbers" : false
 }
 
 // Default settings of URL parameters
@@ -76,6 +82,14 @@ function getData(queryString) {
 
 // Create rows with departures and insert them into document
 function updateContent(data){
+  
+  // If multiple stops are to be displayed, show column with platform numbers
+  const uniqueStops = new Set();
+  data.stops.forEach((stop) => {
+    uniqueStops.add(stop.asw_id.node+"/"+stop.asw_id.stop);
+  });
+  settings.showPlatformNumbers = (uniqueStops.size > 1) ? true : false;
+
   const body = document.getElementsByTagName("main")[0];
   body.replaceChildren();
   data.departures.forEach((row) => {
@@ -110,6 +124,13 @@ function updateContent(data){
     headsign.classList.add("headsign");
     headsign.textContent = row.trip.headsign;
     departure.appendChild(headsign);
+
+    if (settings.showPlatformNumbers) {
+      const platform = document.createElement("div");
+      platform.classList.add("platform");
+      platform.textContent = row.stop.platform_code;
+      departure.appendChild(platform);
+    }
 
     const arrival = document.createElement("div");
     arrival.classList.add("arrival");
