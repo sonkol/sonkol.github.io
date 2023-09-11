@@ -32,9 +32,20 @@ main {
   width: 100%;
 }
 
-.row div {
-  display: table-cell;
-  vertical-align: middle;
+
+main:has(#fullscreen-text-content) {
+  align-content: center;
+  flex-grow: 1;
+}
+
+#fullscreen-text-content {
+  grid-column: start / end;
+  text-align: center;
+  align-self: center;
+}
+
+#fullscreen-text-content > p {
+  margin: 0px 0; 
 }
 
 .route {

@@ -2,7 +2,8 @@
 // Constant definitions
 const SETTINGS = {
   "prefix" : "https://api.golemio.cz/v2/pid/departureboards/?", // Base URL
-  "httpTimeout" : 20
+  "httpTimeout" : 20,
+  "offlineText" : "<p>Omlouváme se, zařízení je dočasně mimo provoz</p><p>Aktuální odjezdy spojů naleznete na webu pid.cz/odjezdy</p>",
 }
 
 // Settings that can be changed
@@ -64,13 +65,13 @@ function getData(queryString) {
         updateContent(data);
       }
       else {
-        fullScreenMessage()
+        fullScreenMessage(SETTINGS.offlineText)
       }
       httpRequest.ontimeout = function() {
-        fullScreenMessage();
+        fullScreenMessage(SETTINGS.offlineText);
       }
       httpRequest.onerror = function () {
-        fullScreenMessage();
+        fullScreenMessage(SETTINGS.offlineText);
       }
     }
     httpRequest.send();
@@ -94,8 +95,6 @@ function updateContent(data){
   body.replaceChildren();
   data.departures.forEach((row) => {
     const departure = document.createElement("div");
-    departure.classList.add("row");
-    departure.classList.add("departure");
 
     const route = document.createElement("div");
     route.classList.add("route");
@@ -156,9 +155,13 @@ function updateClock(){
   document.getElementById("minutes").textContent = minutes;
 }
 
-// Set fulscreen innformation text
+// Set fullscreen information text
 function fullScreenMessage(content = ""){
-  // TODO Content of full-screen message
+  const main = document.getElementsByTagName("main")[0];
+  const message = document.getElementById("fullscreen-text").content.cloneNode(true);
+  message.firstChild.innerHTML = content;
+  main.textContent = "";
+  main.appendChild(message);
 }
 
 // Timer for content updates 20 s
