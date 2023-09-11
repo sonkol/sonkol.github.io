@@ -1,5 +1,7 @@
 :root {
-  --displayed-rows: 6;
+  --displayed-rows: 5;
+  --total-height: 128px;
+  --row-height: var(--total-height) / (var(--displayed-rows) + 1);
 }
 
 body {
@@ -7,7 +9,6 @@ body {
   background-color: black;
   color: white;
   font-family: 'Lato', sans-serif;
-  font-size: calc(128px * 0.80 / var(--displayed-rows));
   outline: 1px dotted white;
   display: flex;
   justify-content: space-between;
@@ -15,7 +16,7 @@ body {
   padding: 0;
   margin: 0;
   width: 384px;
-  height: 128px;
+  height: var(--total-height);
   overflow: hidden;
   font-variant-numeric: tabular-nums;
   /* transform: scale(9.43); /* Tímto se zapíná zvětšení na 1:1 při zobrazení na 96 dpi monitoru) */
@@ -23,15 +24,18 @@ body {
 }
 
 main {
-  overflow: hidden;
-  display: table;
+  height: calc(var(--total-height) - var(--row-height));
+  display: grid;
+  grid-template-columns: [start] 4ch 15px max-content 1fr max-content 3ch [end];
+  grid-template-rows: [top] var(--row-height) [bottom];
+  gap: 3px;
+  align-content: start;
+  overflow: clip;
 }
 
-.row {
-  display: table-row;
-  width: 100%;
+.aircondition:empty, .plaform:empty {
+  position: absolute;
 }
-
 
 main:has(#fullscreen-text-content) {
   align-content: center;
@@ -49,57 +53,74 @@ main:has(#fullscreen-text-content) {
 }
 
 .route {
-  width: 10%;
-  padding-right: 10px;
   text-align: right;
+  grid-column: 1;
 }
 
 .accessible {
-  width: 10px;
-  padding-right: 10px;
   text-align: center;
+  grid-column: 2;
 }
 
 .aircondition {
-  width: 10px;
   text-align: center;
-  padding-right: 10px;
-}
-
-.aircondition img {
-  width: 10px;
+  grid-column: 3;
 }
 
 .headsign {
-  padding-right: 10px;
   text-overflow: ellipsis;
   overflow: hidden;
+  grid-column: 4;
 }
 
 .platform {
-  width: 2em;
   text-align: center;
+  grid-column: 5;
 }
 
 .arrival {
-  width: 3ch;
   text-align: right;
+  grid-column: 6;
 }
 
 img {
-  max-height: calc(128px * 0.6 / var(--displayed-rows));
+  width: 10px;
+  height: 100%;
+  max-height: calc(var(--total-height) * 0.6 / var(--displayed-rows) - 1);
 }
 
 #datetime {
   display: flex;
   justify-content: space-between;
+  height: var(--row-height) ;
 }
+
 #colon {
   animation-name: blink;
   animation-duration: 1s;
   animation-direction: alternate-reverse;
   animation-iteration-count: infinite;
   animation-timing-function: steps(2,jump-none)
+}
+
+/* Napevno předdefinované velikosti písma dle počtu řádků. Při změně fontu bude potřeba překonfigurovat */
+.fontsize1, .fontsize2, .fontsize3, .fontsize4 {
+  font-size: 19px;
+}
+
+.fontsize5 {
+  font-size: 16px;
+  line-height: 1.18;
+}
+
+.fontsize6 {
+  font-size: 14px;
+  line-height: 1.13;
+}
+
+.fontsize7 {
+  font-size: 13px;
+  line-height: 1.03;
 }
 
 @keyframes blink {

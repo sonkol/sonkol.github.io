@@ -4,6 +4,7 @@ const SETTINGS = {
   "prefix" : "https://api.golemio.cz/v2/pid/departureboards/?", // Base URL
   "httpTimeout" : 20,
   "offlineText" : "<p>Omlouváme se, zařízení je dočasně mimo provoz</p><p>Aktuální odjezdy spojů naleznete na webu pid.cz/odjezdy</p>",
+  "dayOfWeek" : ["Neděle","Pondělí","Úterý","Středa","Čtvrtek","Pátek","Sobota"] // Dictionary of week days
 }
 
 // Settings that can be changed
@@ -20,9 +21,6 @@ const PARAMETERS = {
   "skip" : "atStop",
   "minutesAfter" : 99
 }
-
-// Dictionary of week days
-const dayOfWeek = ["Neděle","Pondělí","Úterý","Středa","Čtvrtek","Pátek","Sobota"];
 
 // Make a copy of parameters which can be edited
 let parameters = PARAMETERS;
@@ -41,6 +39,10 @@ if (!["true","false"].includes(parameters.airCondition)) parameters.airCondition
 if (!/^[1-9][0-9]{0,4}(_\d{1,3})?$/.test(parameters.aswIds)) parameters.aswIds = PARAMETERS.aswIds;
 if (!["none", "routeOnce", "routeHeadingOnce", "routeOnceFill", "routeHeadingOnceFill", "routeHeadingOnceNoGap", "routeHeadingOnceNoGapFill"].includes(parameters.filter)) parameters.filter = PARAMETERS.filter;
 if (parameters.limit <= 0 && parameters.limit >= 8) parameters.limit = PARAMETERS.limit;
+
+// Copy the desired number of rows to CSS
+document.documentElement.style.setProperty('--displayed-rows', parameters.limit);
+document.getElementsByTagName("body")[0].classList.add("fontsize" + parameters.limit);
 
 // Construct query string
 const queryString = new URLSearchParams(parameters).toString();
@@ -84,6 +86,7 @@ function getData(queryString) {
 // Create rows with departures and insert them into document
 function updateContent(data){
   
+
   // If multiple stops are to be displayed, show column with platform numbers
   const uniqueStops = new Set();
   data.stops.forEach((stop) => {
@@ -99,7 +102,7 @@ function updateContent(data){
     const route = document.createElement("div");
     route.classList.add("route");
     route.textContent = row.route.short_name;
-    departure.appendChild(route);
+    body.appendChild(route);
 
     const accessible = document.createElement("div");
     accessible.classList.add("accessible");
@@ -108,7 +111,7 @@ function updateContent(data){
       wheelchair.setAttribute("src","accessible.svg");
       accessible.appendChild(wheelchair);
     }
-    departure.appendChild(accessible);
+    body.appendChild(accessible);
 
     const airCondition = document.createElement("div");
     airCondition.classList.add("aircondition");
@@ -117,31 +120,30 @@ function updateContent(data){
       aircondition.setAttribute("src","snowflake.svg");
       airCondition.appendChild(aircondition);
     }
-    departure.appendChild(airCondition);
+    body.appendChild(airCondition);
 
     const headsign = document.createElement("div");
     headsign.classList.add("headsign");
     headsign.textContent = row.trip.headsign;
-    departure.appendChild(headsign);
+    body.appendChild(headsign);
 
     if (settings.showPlatformNumbers) {
       const platform = document.createElement("div");
       platform.classList.add("platform");
       platform.textContent = row.stop.platform_code;
-      departure.appendChild(platform);
+      body.appendChild(platform);
     }
 
     const arrival = document.createElement("div");
     arrival.classList.add("arrival");
     arrival.textContent = row.departure_timestamp.minutes;
-    departure.appendChild(arrival);
-    body.appendChild(departure);
+    body.appendChild(arrival);
   });
 }
 
 function updateClock(){
   const now = new Date();
-  const date = dayOfWeek[now.getDay()] +
+  const date = SETTINGS.dayOfWeek[now.getDay()] +
   " " +
   now.getDate().toString().padStart(2,"0") +
   ".&thinsp;" +
