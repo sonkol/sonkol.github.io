@@ -9,6 +9,7 @@ const SETTINGS = {
 
 // Settings that can be changed
 let settings = {
+  "showPlatformNumbers" : false,
   "offline" : 0,
   "lastConnectionTime" : undefined
 }
@@ -103,7 +104,11 @@ function getData(queryString) {
 
 // Create rows with departures and insert them into document
 function updateContent(data){
-  
+  if (data.infotexts.length > 0) {
+    const isGlobalInfotext = processInfoTexts(data.infotexts);
+    console.log(isGlobalInfotext);
+    if (isGlobalInfotext) return;
+  }
 
   // If multiple stops are to be displayed, show column with platform numbers
   const uniqueStops = new Set();
@@ -157,6 +162,55 @@ function updateContent(data){
     arrival.textContent = row.departure_timestamp.minutes;
     body.appendChild(arrival);
   });
+}
+
+function processInfoTexts(data) {
+  let inline = false,
+    general = false,
+    general_alternate = false // Switch that controls the display of listed board classes
+  let infotexts = {};
+  infotexts.inline = [],
+    infotexts.general = [];
+
+  for (const text of data) {
+    if (text.display_type === "inline") {
+      if (text.text) infotexts.inline.push(text.text.trim());
+      if (text.text_en) infotexts.inline.push(text.text_en.trim());
+      inline = true;
+    }
+    else {
+      if (text.text) infotexts.general.push(text.text.trim());
+      if (text.text_en) infotexts.general.push(text.text_en.trim());
+      // Selects the correct display mode TODO support for alternate
+      (text.display_type === "general-alternate") ? general_alternate = true : general = true;
+    }
+  }
+  // One-liners
+  const infotextBar = document.getElementById("infotext");
+  const dateBar = document.getElementById("date");
+  if (inline) {
+    infotextBar.innerHTML = infotexts.inline.join(" *** ");  // Separator for future reference: • 
+    infotextBar.style.display = "flex";
+    dateBar.style.display = "none";
+  }
+  else {
+    try {
+      infotextBar.style.display = "none";
+      dateBar.style.display = "flex";
+    }
+    catch { }
+  }
+
+  // Full screen messages
+  if (general || general_alternate) {
+    settings.infotextGeneral = true;
+    fullScreenMessage(infotexts.general.join(" *** "));
+  }
+  else {
+    settings.infotextGeneral = false;
+  }
+
+  return general === true;
 }
 
 function updateClock(){

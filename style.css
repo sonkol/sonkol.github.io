@@ -103,6 +103,13 @@ img {
   animation-timing-function: steps(2,jump-none)
 }
 
+#infotext {
+  display: none;
+  margin-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 /* Napevno předdefinované velikosti písma dle počtu řádků. Při změně fontu bude potřeba překonfigurovat */
 .fontsize1, .fontsize2, .fontsize3, .fontsize4 {
   font-size: 19px;
