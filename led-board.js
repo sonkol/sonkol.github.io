@@ -9,7 +9,8 @@ const SETTINGS = {
 
 // Settings that can be changed
 let settings = {
-  "showPlatformNumbers" : false
+  "offline" : 0,
+  "lastConnectionTime" : undefined
 }
 
 // Default settings of URL parameters
@@ -60,20 +61,37 @@ function getData(queryString) {
     httpRequest.setRequestHeader('x-access-token', KEY);
     httpRequest.onreadystatechange = function () {
       // ReadyState 4 = done, HTTP 200 = OK
-      if (this.readyState === 4 && httpRequest.status === 200) {
+      if (this.readyState === 4) {
         // Continue on success (200) or process errors
-        let data = JSON.parse(this.responseText);
+        switch (httpRequest.status) {
+          case 200:
+            // Reset counter when connection successful and remove offline message
+            settings.offline = 0;
+            // TODO Get absolute time of connection acquistion to know data age
+            // TODO settings.lastConnectionTime = data.currentTime;
+            // TODO $("#offline").removeAttr("style");
+            const data = JSON.parse(this.responseText);
+
         // If data succesfully arrived, replace the local time (which could be incorrect) with server time
+            // TODO data.currentTime = luxon.DateTime.fromHTTP(httpRequest.getResponseHeader("date")).setLocale("cs").setZone(SETTINGS.preferredTimeZone);
         updateContent(data);
-      }
-      else {
-        fullScreenMessage(SETTINGS.offlineText)
-      }
-      httpRequest.ontimeout = function() {
+            break;
+          case 400:
+            fullScreenMessage("Chybný dotaz.<br>Nechybí ID zastávky?");
+            break;
+          case 401:
+            fullScreenMessage("Problém s API klíčem<br>Nesprávný nebo chybějící API klíč. Pro získání API klíče se zaregistrujte u Golemia.");
+            break;
+          case 404:
+            fullScreenMessage("Zastávka je nyní bez provozu");
+            break;
+          case 0:
+            fullScreenMessage(SETTINGS.offlineText);
+            break;
+          default:
         fullScreenMessage(SETTINGS.offlineText);
+            console.error("Chyba načítání stránky. HTTP " + httpRequest.status + " " + httpRequest.statusText);
       }
-      httpRequest.onerror = function () {
-        fullScreenMessage(SETTINGS.offlineText);
       }
     }
     httpRequest.send();
