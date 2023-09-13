@@ -20,11 +20,15 @@ Tabule podporuje níže popsanou podmnožinu parametrů, které se zapisují do 
 Příklad výchozí URL se všemi parametry: index.html?airCondition=true&aswIds=539_1&filter=routeHeadingOnce&limit=5&skip=atStop&minutesAfter=99
 
 ## Funkce
-Aplikace je určená pro zobrazování tabulí na LED panelech, a proto podporuje jen minimální podmnožinu požadovaných funkcí. Nejsou podporovány následujcí funkce:
-* Zobrazování řádkového informačního textu
+Aplikace je určená pro zobrazování tabulí na LED panelech, a proto podporuje jen minimální podmnožinu požadovaných funkcí.
+Podpora je hotová pro 
 * Zobrazení celoplošného informačního textu
-* Zobrazení celoplošného střídavého informačního textu
 * Náhradní zpráva při poruše
-* Čtení pro nevidomé
 * Dynamické zvětšování textu na základě počtu řádků
 * Přidat automaticky kód stanoviště v případě více ID
+
+Zatím není podporováno:
+* Zobrazování řádkového informačního textu (nutné dokončit animaci)
+* Zobrazení celoplošného střídavého informačního textu
+* Čtení pro nevidomé
+* Přednastavené zastávky
