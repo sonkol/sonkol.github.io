@@ -11,8 +11,11 @@ const SETTINGS = {
 let settings = {
   "showPlatformNumbers": false,
   "offline": 0,
-  "lastConnectionTime": undefined
+  "lastConnectionTime": undefined,
+  "reading": false,
 }
+
+  let data = "";
 
 // Default settings of URL parameters
 const PARAMETERS = {
@@ -71,7 +74,7 @@ function getData(queryString) {
             // TODO Get absolute time of connection acquistion to know data age
             // TODO settings.lastConnectionTime = data.currentTime;
             // TODO $("#offline").removeAttr("style");
-            const data = JSON.parse(this.responseText);
+            data = JSON.parse(this.responseText);
 
             // If data succesfully arrived, replace the local time (which could be incorrect) with server time
             // TODO data.currentTime = luxon.DateTime.fromHTTP(httpRequest.getResponseHeader("date")).setLocale("cs").setZone(SETTINGS.preferredTimeZone);
@@ -106,7 +109,6 @@ function getData(queryString) {
 function updateContent(data) {
   if (data.infotexts.length > 0) {
     const isGlobalInfotext = processInfoTexts(data.infotexts);
-    console.log(isGlobalInfotext);
     if (isGlobalInfotext) return;
   }
 
@@ -211,6 +213,170 @@ function processInfoTexts(data) {
   }
 
   return general === true;
+}
+
+// Text to speech
+// Convert route numbers with letters to pronounced separate letters
+function mixedNumberToWords(inputString) {
+  if (inputString.length === 0) {
+      return "";
+  }
+  const letters = { a: "á", b: "bé", c: "cé", č: "čé", d: "dé", e: "é", f: "ef", g: "gé", h: "há", i: "í", j: "jé", k: "ká", l: "el", m: "em", n: "en", o: "ó", p: "pé", q: "kvé", r: "er", s: "e:s", š: "eš", t: "té", u: "ú", v: "vé", w: "dvojité vé", x: "iks", y: "y", z: "zed" };
+  const separateLettersNumbers = new RegExp(/\p{L}+|\p{N}+/ug);
+  let output = [];
+  const block = inputString.match(separateLettersNumbers);
+  block.forEach((item) => {
+      if (/^\p{Lu}{1,2}$/ug.test(item)) {
+          item.split("").forEach(
+              (letter) => {
+                  output.push(letters[letter.toLowerCase()]);
+              }
+          )
+      }
+      else output.push(digitsToWords(item));
+  });
+
+  return output.join(" ");
+}
+
+// Convert digits to word strings (works for numbers smaller than 9999)
+function digitsToWords(number) {
+  if (number.length === 0) return "";
+  const quadDigit = new RegExp("[1-9][0-9]{0,3}");
+  if (!quadDigit.test(number)) return number;
+  number = parseInt(number, 10).toString();
+  const basics = ["", "jedna", "dva", "tři", "čtyři", "pět", "šest", "sedm", "osm", "devět", "deset", "jedenáct", "dvanáct", "třináct", "čtrnáct", "patnáct", "šestnáct", "sedmnáct", "osmnáct", "devatenáct"];
+  const tens = [, "deset", "dvacet", "třicet", "čtyřicet", "padesát", "šedesát", "sedmdesát", "osmdesát", "devadesát"];
+  const hundreds = [, "sto ", "dvěstě ", "třista ", "čtyřista ", "pětset ", "šestset ", "sedmset ", "osmset ", "devětset "];
+  if (number === 0) return "nula";
+  if (number <= 19) return basics[number];
+  if (number <= 99) return tens[number.slice(0, 1)] + basics[number.slice(1)];
+  if (number <= 999 && number % 100 === 0) return hundreds[number.slice(0, 1)]; // Handle whole hundreds
+  if (number <= 999) return hundreds[number.slice(0, 1)] + digitsToWords(number.slice(1));
+  return number;
+}
+
+// Numeric keys will trigger reading identically to VPN remote control
+document.addEventListener('keydown', function (event) {
+  // Reset pause button inactivity timer
+  if (settings.inactivityTimer > 0) clearTimeout(settings.inactivityTimer);
+  switch (event.key) {
+      case "1":
+          // Read title of departure board
+          readOutLoud(prepareReadOutHeader(data));
+          event.preventDefault();
+          break;
+      case "5":
+          // Pause
+          if (window.speechSynthesis.paused) {
+              window.speechSynthesis.resume();
+          }
+          else if (!window.speechSynthesis.paused && window.speechSynthesis.speaking) {
+              window.speechSynthesis.pause();
+              settings.inactivityTimer = setTimeout(function () { window.speechSynthesis.cancel() }, 10000);
+          }
+          event.preventDefault();
+          break;
+      case "6":
+          // Read list of departures
+          readOutLoud(prepareReadOutDepartures(data));
+          event.preventDefault();
+          break;
+  }
+});
+
+function prepareReadOutHeader(data) {
+  let uniquePlatforms = new Set();
+  for (const stop of data.stops) {
+    uniquePlatforms.add(mixedNumberToWords(stop.platform_code));
+  }
+ return data.stops[0].stop_name + " stanoviště " + [...uniquePlatforms].join("– a");
+}
+
+function prepareReadOutDepartures(data) {
+  // Shortcut if no departures available
+  if (data.departures.length === 0) {
+    sentences.push("V blízké době není naplánovaný žádný odjezd.");
+    return sentences;
+  }
+
+  // Prepare tables of common expressions
+  let sentences = [];
+  const transportMode = ["Tramvaj", "Metro", "Vlak", "Autobus", "Přívoz", , "Visutá lanovka", "Lanovka", , "Trolejbus"];
+
+  // Prepare infotext
+  if (data.infotexts.length > 0) {
+    for (const informationText of data.infotexts) {
+      // Convert numbers in the text to words
+      informationText.text = informationText.text.replace(/(\d+)/g, function (match) {
+        return (digitsToWords(match));
+      });
+      sentences.push(informationText.text);
+    }
+  }
+
+  // Get number of displayed rows so we don't say more than necessary
+  const rowLimit = document.getElementsByClassName("route").length;
+  let counter = 1;
+
+  // Flip through every departure and prepare a sentence
+  for (const departure of data.departures) {
+    if (counter > rowLimit) break;
+    counter++;
+    /* The sentence format depends on the display format
+    Autobus 119 směr Letiště odjede za 5 minut. */
+    let prepareSentence;
+    const time = departure.departure_timestamp.minutes;
+    const platform = (settings.showPlatformNumbers && departure.stop.platform_code !== null) ? "z nástupiště " + mixedNumberToWords(departure.stop.platform_code) : "";
+
+    // Calculate the time to arrival
+    // Patch together the sentence
+    prepareSentence = `${transportMode[departure.route.type]} ${mixedNumberToWords(departure.route.short_name)} směr ${departure.trip.headsign} odjede ${platform} za `
+    if (time == "<1") prepareSentence += "méně než jednu minutu."
+    else if (time <= 1) prepareSentence += "jednu minutu."
+    else if (time == 2) prepareSentence += "dvě minuty."
+    else if (time > 2 && time < 5) prepareSentence += digitsToWords(time) + " minuty."
+    else prepareSentence += digitsToWords(time) + " minut.";
+    sentences.push(prepareSentence);
+  }
+
+  return sentences;
+}
+
+// Load sounds
+function playChime(file) {
+  return new Promise(function (resolve, reject) {
+    const sound = new Audio(`${file}.mp3`);
+    sound.onerror = reject;
+    sound.onended = resolve;
+    sound.play();
+  });
+}
+
+function endRead() {
+  playChime("end");
+  settings.reading = false;
+};
+
+async function readOutLoud(sentences) {
+  // Do not read if other reading is in progress
+  if (settings.reading && !window.speechSynthesis.paused || window.speechSynthesis.pending) return false;
+  // If starting from a paused state, free the speech queue so we can start again
+  if (window.speechSynthesis.paused) window.speechSynthesis.cancel();
+  settings.reading = true;
+  const say = new SpeechSynthesisUtterance(sentences);
+  say.lang = "cs-CZ";
+  // Speak the texts with intro and outro chimes
+  await playChime("start");
+  window.speechSynthesis.speak(say);
+  say.onend = function () { endRead() };
+  say.oncancel = function () { endRead() };
+  /* TTS template
+   <gong>
+   Zastávka <StopName>. Čas <h> hodin, <m> minut.
+   If format minutes: <VehicleType> <RouteNumber> směr <Destination> [odjezd | příjezd] za <min> minutu.
+   <cvak>
+   */
 }
 
 function updateClock() {
