@@ -385,7 +385,7 @@ function updateClock() {
     " " +
     now.getDate().toString().padStart(2, "0") +
     ".&thinsp;" +
-    now.getMonth().toString().padStart(2, "0") +
+    (now.getMonth() + 1).toString().padStart(2, "0") +
     ".&thinsp;" +
     now.getFullYear().toString().padStart(2, "0");
   const hours = now.getHours().toString().padStart(2, "0");
