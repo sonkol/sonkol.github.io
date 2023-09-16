@@ -294,14 +294,22 @@ function prepareReadOutHeader(data) {
 }
 
 function prepareReadOutDepartures(data) {
+  // Store the text to be spoken
+  let sentences = [];
+  
+  // Fallback
+  if (!data) {
+    sentences.push("Zastávka je nyní bez provozu");
+    return sentences;
+  }
+
   // Shortcut if no departures available
   if (data.departures.length === 0) {
     sentences.push("V blízké době není naplánovaný žádný odjezd.");
     return sentences;
   }
 
-  // Prepare tables of common expressions
-  let sentences = [];
+  // GTFS mode translation table
   const transportMode = ["Tramvaj", "Metro", "Vlak", "Autobus", "Přívoz", , "Visutá lanovka", "Lanovka", , "Trolejbus"];
 
   // Prepare infotext
