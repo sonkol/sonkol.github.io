@@ -13,6 +13,7 @@ let settings = {
   "offline": 0,
   "lastConnectionTime": undefined,
   "reading": false,
+  "infotextContent": undefined
 }
 
   let data = "";
@@ -107,6 +108,8 @@ function getData(queryString) {
 
 // Create rows with departures and insert them into document
 function updateContent(data) {
+
+  // Process information texts. If a full page infotext is present, do not render departures
   if (data.infotexts.length > 0) {
     const isGlobalInfotext = processInfoTexts(data.infotexts);
     if (isGlobalInfotext) return;
@@ -169,10 +172,14 @@ function updateContent(data) {
 function processInfoTexts(data) {
   let inline = false,
     general = false,
-    general_alternate = false // Switch that controls the display of listed board classes
-  let infotexts = {};
-  infotexts.inline = [],
-    infotexts.general = [];
+    general_alternate = false, // Switches that control the display of listed board classes
+    referenceString = "";
+
+  // Here the strings will be stored   
+  let infotexts = {
+    "inline": [],
+    "general": []
+  };
 
   for (const text of data) {
     if (text.display_type === "inline") {
@@ -186,22 +193,42 @@ function processInfoTexts(data) {
       // Selects the correct display mode TODO support for alternate
       (text.display_type === "general-alternate") ? general_alternate = true : general = true;
     }
+
+    // This will be used to compare if infotexts froom previous refresh did change
+    referenceString += text.display_type+text.text+text.text_en;
   }
+
+  // If the text content and infotext types are the same, do not redraw
+  if (referenceString === settings.infotextContent) {
+    return general === true;
+  }
+
+  // Update the string for future comparision
+  settings.infotextContent = referenceString
+
   // One-liners
   const infotextBar = document.getElementById("infotext");
   const dateBar = document.getElementById("date");
   if (inline) {
-    infotextBar.innerHTML = infotexts.inline.join(" *** ");  // Separator for future reference: • 
+    // Non-overflowing (short) information text is static
+    infotextBar.innerHTML = infotexts.inline.join(" • ");  // Separator for future reference: • 
     infotextBar.style.display = "flex";
     dateBar.style.display = "none";
   }
+  if (inline && infotextBar.scrollWidth > infotextBar.clientWidth) {
+    // If text overflows it will be animated
+    infotextBar.classList.add("marquee");
+    infotextBar.textContent = "";
+    const infotextcontent = document.createElement("div");
+    infotextcontent.classList.add("infotextcontent");
+    infotextcontent.textContent = infotexts.inline.join(" *** ");
+    infotextBar.appendChild(infotextcontent);
+    infotextBar.appendChild(infotextcontent.cloneNode(true));
+  }
   else {
-    try {
       infotextBar.style.display = "none";
       dateBar.style.display = "flex";
     }
-    catch { }
-  }
 
   // Full screen messages
   if (general || general_alternate) {
