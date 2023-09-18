@@ -7,7 +7,7 @@ const SETTINGS = {
   "dayOfWeek": ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"] // Dictionary of week days
 }
 
-// Settings that can be changed
+// Settings that can be changed and general variables
 let settings = {
   "showPlatformNumbers": false,
   "offline": 0,
@@ -16,7 +16,8 @@ let settings = {
   "infotextContent": undefined
 }
 
-  let data = "";
+// Data from API will go here
+let data = "";
 
 // Default settings of URL parameters
 const PARAMETERS = {
@@ -81,13 +82,13 @@ function getData(queryString) {
             // TODO data.currentTime = luxon.DateTime.fromHTTP(httpRequest.getResponseHeader("date")).setLocale("cs").setZone(SETTINGS.preferredTimeZone);
             updateContent(data);
             break;
-          case 400:
+          case 400: // Malformed query
             fullScreenMessage("Chybný dotaz.<br>Nechybí ID zastávky?");
             break;
           case 401:
             fullScreenMessage("Problém s API klíčem<br>Nesprávný nebo chybějící API klíč. Pro získání API klíče se zaregistrujte u Golemia.");
             break;
-          case 404:
+          case 404: // Stop does not exist. Either wrong ASW ID or the stop was cancelled  
             fullScreenMessage("Zastávka je nyní bez provozu");
             break;
           case 0:
@@ -120,6 +121,8 @@ function updateContent(data) {
   data.stops.forEach((stop) => {
     uniqueStops.add(stop.asw_id.node + "/" + stop.asw_id.stop);
   });
+
+  // Show platform numbers when there is more than one stop to display
   settings.showPlatformNumbers = (uniqueStops.size > 1) ? true : false;
 
   const body = document.getElementsByTagName("main")[0];
@@ -181,6 +184,7 @@ function processInfoTexts(data) {
     "general": []
   };
 
+  // Separate inline and fullscreen infotexts
   for (const text of data) {
     if (text.display_type === "inline") {
       if (text.text) infotexts.inline.push(text.text.trim());
@@ -211,7 +215,7 @@ function processInfoTexts(data) {
   const dateBar = document.getElementById("date");
   if (inline) {
     // Non-overflowing (short) information text is static
-    infotextBar.innerHTML = infotexts.inline.join(" • ");  // Separator for future reference: • 
+    infotextBar.innerHTML = infotexts.inline.join(" • ");
     infotextBar.style.display = "flex";
     dateBar.style.display = "none";
   }
@@ -222,10 +226,12 @@ function processInfoTexts(data) {
     const infotextcontent = document.createElement("div");
     infotextcontent.classList.add("infotextcontent");
     infotextcontent.textContent = infotexts.inline.join(" *** ");
+    // The element has to be doubled to animate seamlessly
     infotextBar.appendChild(infotextcontent);
     infotextBar.appendChild(infotextcontent.cloneNode(true));
   }
   else {
+      // Restore display to normal state
       infotextBar.style.display = "none";
       dateBar.style.display = "flex";
     }
@@ -283,13 +289,14 @@ function digitsToWords(number) {
   return number;
 }
 
-// Numeric keys will trigger reading identically to VPN remote control
+// Numeric keys will trigger reading identically to VPN (remote control for visually impaired)
+// Onyl keys 1,5,6 are handled
 document.addEventListener('keydown', function (event) {
   // Reset pause button inactivity timer
   if (settings.inactivityTimer > 0) clearTimeout(settings.inactivityTimer);
   switch (event.key) {
       case "1":
-          // Read title of departure board
+          // Read stop name
           readOutLoud(prepareReadOutHeader(data));
           event.preventDefault();
           break;
@@ -312,6 +319,7 @@ document.addEventListener('keydown', function (event) {
   }
 });
 
+// Read header in form Stop Name + platform name. Does not sound well for many platforms
 function prepareReadOutHeader(data) {
   let uniquePlatforms = new Set();
   for (const stop of data.stops) {
@@ -408,13 +416,14 @@ async function readOutLoud(sentences) {
   say.oncancel = function () { endRead() };
   /* TTS template
    <gong>
-   Zastávka <StopName>. Čas <h> hodin, <m> minut.
-   If format minutes: <VehicleType> <RouteNumber> směr <Destination> [odjezd | příjezd] za <min> minutu.
+   Zastávka <StopName>.
+   <VehicleType> <RouteNumber> směr <Destination> přijede za <min> minut.
    <cvak>
    */
 }
 
 function updateClock() {
+  // Date Úterý 19. 01. 2038
   const now = new Date();
   const date = SETTINGS.dayOfWeek[now.getDay()] +
     " " +
@@ -423,6 +432,7 @@ function updateClock() {
     (now.getMonth() + 1).toString().padStart(2, "0") +
     ".&thinsp;" +
     now.getFullYear().toString().padStart(2, "0");
+  // Time 03:14
   const hours = now.getHours().toString().padStart(2, "0");
   const minutes = now.getMinutes().toString().padStart(2, "0");
   document.getElementById("date").innerHTML = date;
