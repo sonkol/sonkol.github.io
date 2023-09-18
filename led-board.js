@@ -254,7 +254,8 @@ function mixedNumberToWords(inputString) {
   if (inputString.length === 0) {
       return "";
   }
-  const letters = { a: "á", b: "bé", c: "cé", č: "čé", d: "dé", e: "é", f: "ef", g: "gé", h: "há", i: "í", j: "jé", k: "ká", l: "el", m: "em", n: "en", o: "ó", p: "pé", q: "kvé", r: "er", s: "e:s", š: "eš", t: "té", u: "ú", v: "vé", w: "dvojité vé", x: "iks", y: "y", z: "zed" };
+
+  const letters = { a: "á", b: "bé", c: "cé", č: "čé", d: "dé", ď: "ďé", e: "é", f: "ef", g: "gé", h: "há", i: "í", j: "jé", k: "ká", l: "el", m: "em", n: "en", ň: "eň", o: "ó", p: "pé", q: "kvé", r: "er", ř: "eř", s: "e:s", š: "eš", t: "té", ť: "ťé", u: "ú", v: "vé", w: "dvojité vé", x: "iks", y: "ypsilon", z: "zed", ž: "žed" };
   const separateLettersNumbers = new RegExp(/\p{L}+|\p{N}+/ug);
   let output = [];
   const block = inputString.match(separateLettersNumbers);
