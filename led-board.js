@@ -66,7 +66,7 @@ function getData(queryString) {
   try {
     const httpRequest = new XMLHttpRequest();
     httpRequest.timeout = SETTINGS.httpTimeout * 1000; // Expects miliseconds
-    const urlBase = SETTINGS.prefix;
+    let urlBase = SETTINGS.prefix;
     if (parameters.preset === undefined) {
       queryString.delete("preset");
     }
