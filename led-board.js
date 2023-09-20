@@ -1,7 +1,8 @@
 "use strict";
 // Constant definitions
 const SETTINGS = {
-  "prefix": "https://api.golemio.cz/v2/pid/departureboards/?", // Base URL
+  "prefix": "https://api.golemio.cz/v2/pid/departureboards/?", // General purpose URL
+  "preset" : "https://s.golemio.cz/pid/", // URL for presets
   "httpTimeout": 20,
   "offlineText": "<p>Omlouváme se, zařízení je dočasně mimo provoz</p><p>Aktuální odjezdy spojů naleznete na webu pid.cz/odjezdy</p>",
   "dayOfWeek": ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"] // Dictionary of week days
@@ -64,15 +65,16 @@ updateClock();
 function getData(queryString) {
   try {
     const httpRequest = new XMLHttpRequest();
-    httpRequest.timeout = SETTINGS.httpTimeout * 1000; // should be miliseconds by spec
-    if (parameters.preset === undefined){
+    httpRequest.timeout = SETTINGS.httpTimeout * 1000; // Expects miliseconds
+    const urlBase = SETTINGS.prefix;
+    if (parameters.preset === undefined) {
       queryString.delete("preset");
     }
     else {
       queryString = queryString.get("preset");
-      SETTINGS.prefix = PREFIX;
+      urlBase = SETTINGS.preset;
     }
-    httpRequest.open("GET", SETTINGS.prefix + queryString.toString());
+    httpRequest.open("GET", urlBase + queryString.toString());
     httpRequest.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
     httpRequest.setRequestHeader('x-access-token', KEY);
     httpRequest.onreadystatechange = function () {
