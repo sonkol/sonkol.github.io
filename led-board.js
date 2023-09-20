@@ -45,7 +45,9 @@ for (const [key, value] of searchString) {
 if (!["true", "false"].includes(parameters.airCondition)) parameters.airCondition = PARAMETERS.airCondition;
 if (!/^[1-9][0-9]{0,4}(_\d{1,3})?$/.test(parameters.aswIds)) parameters.aswIds = PARAMETERS.aswIds;
 if (!["none", "routeOnce", "routeHeadingOnce", "routeOnceFill", "routeHeadingOnceFill", "routeHeadingOnceNoGap", "routeHeadingOnceNoGapFill"].includes(parameters.filter)) parameters.filter = PARAMETERS.filter;
-if (parameters.limit <= 0 && parameters.limit >= 8) parameters.limit = PARAMETERS.limit;
+parameters.limit = (parameters.limit.length === 0) ? PARAMETERS.limit : Math.min(Math.max(parameters.limit, 0), 6); // Clamp number of displayed lines
+parameters.minutesAfter = (parameters.minutesAfter) ? PARAMETERS.minutesAfter : Math.min(Math.max(parameters.minutesAfter, 0), 1440); // Clamp minutesAfter
+if (!/^[a-zA-Z0-9_-]$/.test(parameters.preset)) parameters.preset = PARAMETERS.preset;
 
 // Copy the desired number of rows to CSS
 document.documentElement.style.setProperty('--displayed-rows', parameters.limit);
