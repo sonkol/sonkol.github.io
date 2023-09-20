@@ -26,7 +26,8 @@ const PARAMETERS = {
   "filter": "routeHeadingOnce",
   "limit": 5,
   "skip": "atStop",
-  "minutesAfter": 99
+  "minutesAfter": 99,
+  "preset" : undefined
 }
 
 // Make a copy of parameters which can be edited
@@ -54,7 +55,7 @@ document.documentElement.style.setProperty('--displayed-rows', parameters.limit)
 document.getElementsByTagName("body")[0].classList.add("fontsize" + parameters.limit);
 
 // Construct query string
-const queryString = new URLSearchParams(parameters).toString();
+const queryString = new URLSearchParams(parameters);
 
 // Fill table with content for the first time
 getData(queryString);
@@ -64,7 +65,14 @@ function getData(queryString) {
   try {
     const httpRequest = new XMLHttpRequest();
     httpRequest.timeout = SETTINGS.httpTimeout * 1000; // should be miliseconds by spec
-    httpRequest.open("GET", SETTINGS.prefix + queryString);
+    if (parameters.preset === undefined){
+      queryString.delete("preset");
+    }
+    else {
+      queryString = queryString.get("preset");
+      SETTINGS.prefix = PREFIX;
+    }
+    httpRequest.open("GET", SETTINGS.prefix + queryString.toString());
     httpRequest.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
     httpRequest.setRequestHeader('x-access-token', KEY);
     httpRequest.onreadystatechange = function () {
